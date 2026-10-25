@@ -157,7 +157,7 @@ export default function CompanyCsvExport() {
         companies: exportedCompanies,
       });
       setStatus(
-        `Haku valmis: ${exportedCompanies.length} yritystä löytyi, ${missingRows.length} riviä ei löytynyt.`,
+        `Haku valmis: ${exportedCompanies.length} yritystä löytyi, ${missingRows.length} riviä ei löytynyt. JSON-tiedostoon lisätty löytyneet yhtiöt.`,
       );
     } catch (exportError) {
       console.error('CSV-yritysvienti epäonnistui:', exportError);
