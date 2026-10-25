@@ -6,8 +6,11 @@ export async function fetchCompanySyncStatus() {
   }
 
   const data = await response.json();
-  if (!Object.hasOwn(data, 'lastSyncedAt')) {
-    throw new Error('API-vastauksesta puuttuu synkronointiaika');
+  if (
+    !Object.hasOwn(data, 'lastSyncedAt') ||
+    !['starting', 'syncing', 'completed', 'failed'].includes(data.status)
+  ) {
+    throw new Error('API-vastauksesta puuttuu synkronoinnin tila');
   }
 
   return data;

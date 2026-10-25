@@ -11,6 +11,13 @@ const REQUEST_TIMEOUT_MS = 30 * 60 * 1000;
 const SYNC_MAPPING_VERSION = '2';
 const SYNC_HOUR = 5;
 const SYNC_MINUTE = 0;
+let companySyncStatus = {
+  status: 'starting',
+  startedAt: null,
+  completedAt: null,
+  importedCount: null,
+  error: null,
+};
 
 // Palauttaa .env-tiedostosta lähde-API:n osoitteen tai ilmoittaa, jos se puuttuu.
 function getSourceUrl() {
@@ -32,6 +39,12 @@ function getNextSyncTime(now = new Date()) {
   }
 
   return nextSync;
+}
+
+// Palauttaa backend-prosessin viimeisimmän synkronoinnin tilan.
+function getCompanySyncStatus() {
+  const { error, ...publicStatus } = companySyncStatus;
+  return publicStatus;
 }
 
 // Tarkistaa arkiston otsaketiedot ja muodostaa version, jolla päivitystarve tunnistetaan.
@@ -195,8 +208,21 @@ function startCompanySyncScheduler() {
   async function runSync() {
     if (syncRunning) return;
     syncRunning = true;
+    companySyncStatus = {
+      ...companySyncStatus,
+      status: 'syncing',
+      startedAt: new Date(),
+      error: null,
+    };
     try {
       const result = await syncCompaniesFromApi();
+      companySyncStatus = {
+        status: 'completed',
+        startedAt: companySyncStatus.startedAt,
+        completedAt: new Date(),
+        importedCount: result.importedCount ?? 0,
+        error: null,
+      };
       if (result.skipped) {
         console.log(`Company data sync skipped: ${result.reason}`);
       } else {
@@ -205,6 +231,12 @@ function startCompanySyncScheduler() {
         );
       }
     } catch (error) {
+      companySyncStatus = {
+        ...companySyncStatus,
+        status: 'failed',
+        completedAt: new Date(),
+        error: error.message,
+      };
       console.error('Daily company data sync failed:', error);
     } finally {
       syncRunning = false;
@@ -233,4 +265,5 @@ module.exports = {
   syncCompaniesFromApi,
   startCompanySyncScheduler,
   getNextSyncTime,
+  getCompanySyncStatus,
 };

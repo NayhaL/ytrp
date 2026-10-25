@@ -1,4 +1,5 @@
 const companyRepository = require('../repositories/companyRepository');
+const { getCompanySyncStatus } = require('../services/companyService');
 
 // Tarkistaa, että päivämäärä on olemassa kalenterissa muodossa YYYY-MM-DD.
 function isValidDateOnly(value) {
@@ -14,7 +15,10 @@ function isValidDateOnly(value) {
 async function getSyncStatus(req, res) {
   try {
     const lastSyncedAt = await companyRepository.getLastSyncTime();
-    return res.json({ lastSyncedAt });
+    return res.json({
+      ...getCompanySyncStatus(),
+      lastSyncedAt,
+    });
   } catch (error) {
     console.error('Failed to read company sync status:', error);
     return res.status(500).json({
