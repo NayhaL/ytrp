@@ -187,7 +187,7 @@ async function syncCompaniesFromApi() {
   });
 }
 
-// Ajastaa synkronoinnin seuraavaan päivittäiseen ajoaikaan ja estää päällekkäiset ajot.
+// Synkronoi käynnistyksessä ja ajastaa seuraavat ajot päivittäin estäen päällekkäisyydet.
 function startCompanySyncScheduler() {
   let syncRunning = false;
 
@@ -226,7 +226,7 @@ function startCompanySyncScheduler() {
     timeout.unref();
   }
 
-  scheduleNextSync();
+  void runSync().then(scheduleNextSync);
 }
 
 module.exports = {
