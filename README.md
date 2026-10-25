@@ -13,6 +13,10 @@ Tästä syystä päätin tehdä ratkaisun, että lisään applikaatiooni psql-ti
 Tällä vältytään useilta api-kutsuilta, vältetään down-timea jos YTJ-rajapinta on suljettuna.
 Tämä myös antaa paremmat mahdollisuudet monimutkaisimmille tietokantahauille jatkokehitykseen.
 
+Ohjelmalle sen jälkeen voi syöttää csv-tiedoston (sample-companies.csv), joka hakee tietoa paikallisesta tietokannasta
+ja rikastuttaa ne ladattavaan JSON-tiedostoon. Käyttöliittymä näyttää löydetyt ja ei löydetyt yhtiöt. JSON-tiedostoon
+ladataan vain löydetyt tiedostot.
+
 Ohjelman käynnistyessä kestää noin pari minuuttia että rajapinnan-data päivitetään paikalliseen tietokantaan.
 
 Käytin AI-työkaluja boilerplate-koodin tuottamiseen, virheen hallinnan käsittelyyn sekä nopeaan react-käyttöliitymän luontiin.
