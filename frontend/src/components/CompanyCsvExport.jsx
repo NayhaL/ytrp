@@ -154,10 +154,6 @@ export default function CompanyCsvExport() {
       setExportData({
         exportedAt: new Date().toISOString(),
         count: exportedCompanies.length,
-        missingSearches: missingRows.map((row) => ({
-          businessId: row.businessId,
-          name: row.name,
-        })),
         companies: exportedCompanies,
       });
       setStatus(
