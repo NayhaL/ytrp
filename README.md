@@ -1,6 +1,26 @@
 # Yritystietojen rikastuspalvelu
+Ratkaisu ajetaan gitin kloonamisen jälkeen ajamalla docker-compose up --build -d
+käyttöliittymä löytyy http://localhost:6969
+
+Tutkin YTJ-rajapintaa ja huomasin, että annettu rajapinta-osoite ei ole kovin sovelias hyvään ratkaisuun.
+https://avoindata.prh.fi/fi/ytj/swagger-ui rajapinta-dokumentaatiota lukiessa käy selväksi, ettei rajapinnalle voi antaa
+listaa vaadituista y-tunnuksista, joiden avulla rajataan hakua. For-loopattua hakua yritys kerrallaan hakeminen on huono ratkaisu ja se tuottaa vaikeasti kehitettävää ja ylläpidettävää koodia. Sekä tuottaa liikaa rajapinta-kutsuja, joka saattaa aiheutta ongelmia.
+
+YTJ-api antaa myös endpointin http://avoindata.prh.fi/opendata-ytj-api/v3/all_companies jolla voi ladata koko tietokannan
+zippinä. Dokumentaatiossa mainitaan, että tietokanta päivitetään vain kerran päivässä.
+
+Tästä syystä päätin tehdä ratkaisun, että lisään applikaatiooni psql-tietokannan, johon ohjelma lataa tietokannan käynnistyessä. Ohjelma myös lataa uuden tietokannan joka aamu kello 05:00.
+Tällä vältytään useilta api-kutsuilta, vältetään down-timea jos YTJ-rajapinta on suljettuna.
+Tämä myös antaa paremmat mahdollisuudet monimutkaisimmille tietokantahauille jatkokehitykseen.
+
+Ohjelman käynnistyessä kestää noin pari minuuttia että rajapinnan-data päivitetään paikalliseen tietokantaan.
+
+Käytin AI-työkaluja boilerplate-koodin tuottamiseen, virheen hallinnan käsittelyyn sekä nopeaan react-käyttöliitymän luontiin.
+
 
 Sovellus koostuu React/Vite-käyttöliittymästä, Express-backendistä ja PostgreSQL-tietokannasta. Backend synkronoi PRH:n ZIP-arkiston yritystiedot päivittäin palvelimen paikallisen ajan mukaan klo 05.00.
+
+Terveisin, Lauri Näyhä
 
 ## Vaatimukset
 
@@ -45,59 +65,5 @@ docker compose logs -f                 # seuraa kaikkien palveluiden lokeja
 docker compose logs -f backend         # seuraa backendin lokeja
 docker compose stop                    # pysäytä palvelut säilyttäen tiedot
 docker compose down                    # poista kontit ja verkko, säilytä tietokantavolyymi
+docker compose down -v                 # poistaa tietokantavolyymit
 ```
-
-`docker compose down -v` poistaa myös PostgreSQL-datavolyymin ja kaikki siihen tallennetut yritystiedot. Käytä sitä vain, jos haluat nollata tietokannan.
-
-## Paikallinen kehitys ilman Dockeria
-
-Paikallisessa ajossa PostgreSQL:n pitää olla käynnissä erikseen. Luo `backend/.env` ja määritä tietokantayhteys sekä PRH-arkiston URL:
-
-```env
-DATABASE_URL=postgresql://lar:salasana@localhost:5432/lar-db
-COMPANY_API_URL=https://avoindata.prh.fi/opendata-ytj-api/v3/all_companies
-PORT=8080
-```
-
-Varmista, että `lar-db`-tietokanta on luotu ja alustettu yritystauluilla. Jos skeemaa ei ole vielä luotu, aja projektin juuresta:
-
-```bash
-psql -h localhost -U lar -d lar-db -f backend/sql/init.sql
-```
-
-Anna pyydettäessä tietokannan salasana. Jos käytät eri käyttäjää, tietokantaa tai porttia, muuta komennon asetukset vastaamaan omaa PostgreSQL-asennustasi.
-
-Käynnistä backend omassa terminaalissa:
-
-```bash
-cd backend
-npm ci
-npm run dev
-```
-
-Käynnistä frontend toisessa terminaalissa:
-
-```bash
-cd frontend
-npm ci
-npm run dev
-```
-
-Kehityskäyttöliittymä avautuu osoitteeseen <http://localhost:6969>. Viten kehityspalvelin välittää `/api`-pyynnöt backendille osoitteeseen `http://localhost:8080`.
-
-## Tuotantobuildit erikseen
-
-Docker-käynnistys rakentaa frontendin automaattisesti ja käynnistää backendin tuotantotilassa. Yksittäiset build-komennot ovat:
-
-```bash
-cd frontend
-npm ci
-npm run lint
-npm run build
-```
-
-Frontendin tuotantotiedostot syntyvät `frontend/dist`-kansioon. Backendillä ei ole erillistä build-vaihetta; tuotanto käynnistetään komennolla `npm start` backend-kansiosta.
-
-## Yrityshaku CSV-tiedostosta
-
-CSV:n otsakkeina voi käyttää `yritystunnus` ja `nimi` tai vaihtoehtoisesti `company-id` ja `name`. Vähintään toisen tunnisteen pitää olla jokaisella haettavalla rivillä täytetty. Y-tunnuksella haetaan ensin; nimen perusteella etsitään, jos tunnusta ei ole tai sillä ei löydy tulosta.
